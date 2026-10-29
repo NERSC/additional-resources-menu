@@ -6,8 +6,7 @@ test.use({
 
 test.describe('Additional Resources Menu Extension', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/lab');
-    await page.waitForSelector('#jp-main-dock-panel');
+    await page.goto('');
   });
 
   test('should render the Help menu in the menu bar', async ({ page }) => {
