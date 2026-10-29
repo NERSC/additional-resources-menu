@@ -1,9 +1,12 @@
 import { test, expect } from '@jupyterlab/galata';
 
+test.use({
+  autoGoto: false
+});
+
 test.describe('Additional Resources Menu Extension', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto();
-    // Wait for the JupyterLab shell to be ready
+    await page.goto('/lab');
     await page.waitForSelector('#jp-main-dock-panel');
   });
 
@@ -12,24 +15,47 @@ test.describe('Additional Resources Menu Extension', () => {
     await expect(helpMenu).toBeVisible();
   });
 
-  test('should display Additional Resources in the Help menu', async ({
+  test('should display Additional Resources in the Help menu when links are configured', async ({
     page
   }) => {
-    await page.menu.open('Help');
+    // Dynamically set links
+    await page.evaluate(async () => {
+      const app = (window as any).jupyterapp;
+      if (app?.serviceManager?.settings) {
+        await app.serviceManager.settings.set(
+          'additional-resources-menu:plugin',
+          {
+            'menu-title': 'Additional Resources',
+            links: [
+              { name: 'NERSC Documentation', url: 'https://docs.nersc.gov' }
+            ]
+          }
+        );
+      }
+    });
+
+    await page.waitForTimeout(500);
+
+    // Click Help to open the menu
+    await page.locator('.lm-MenuBar-itemLabel:text("Help")').click();
 
     const submenuItem = page.locator(
       '.lm-Menu-itemLabel:text("Additional Resources")'
     );
     await expect(submenuItem).toBeVisible();
+
+    await submenuItem.hover();
+    await expect(
+      page.locator('.lm-Menu-itemLabel:text("NERSC Documentation")')
+    ).toBeVisible();
   });
 
   test('should update menu items dynamically when settings change', async ({
     page
   }) => {
-    // Dynamically update plugin settings via JupyterLab serviceManager
     await page.evaluate(async () => {
       const app = (window as any).jupyterapp;
-      if (app && app.serviceManager && app.serviceManager.settings) {
+      if (app?.serviceManager?.settings) {
         await app.serviceManager.settings.set(
           'additional-resources-menu:plugin',
           {
@@ -43,20 +69,22 @@ test.describe('Additional Resources Menu Extension', () => {
       }
     });
 
-    // Open the Help menu and verify the new title
-    await page.menu.open('Help');
+    await page.waitForTimeout(500);
+
+    // Open Help menu
+    await page.locator('.lm-MenuBar-itemLabel:text("Help")').click();
+
     const dynamicSubmenu = page.locator(
       '.lm-Menu-itemLabel:text("Dynamic Resources")'
     );
     await expect(dynamicSubmenu).toBeVisible();
 
-    // Hover over the submenu to open it
     await dynamicSubmenu.hover();
-
-    const link1 = page.locator('.lm-Menu-itemLabel:text("Test Link 1")');
-    await expect(link1).toBeVisible();
-
-    const link2 = page.locator('.lm-Menu-itemLabel:text("Test Link 2")');
-    await expect(link2).toBeVisible();
+    await expect(
+      page.locator('.lm-Menu-itemLabel:text("Test Link 1")')
+    ).toBeVisible();
+    await expect(
+      page.locator('.lm-Menu-itemLabel:text("Test Link 2")')
+    ).toBeVisible();
   });
 });

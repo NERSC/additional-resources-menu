@@ -4,6 +4,10 @@ module.exports = {
   ...baseConfig,
   testDir: './ui-tests/tests',
   timeout: 60000,
+  use: {
+    ...baseConfig.use,
+    baseURL: 'http://localhost:8888'
+  },
   webServer: {
     command: 'jupyter lab --port=8888 --no-browser --ServerApp.token=""',
     url: 'http://localhost:8888/lab',
