@@ -1,68 +1,73 @@
-name: Build
+name: Build and Test
 
 on:
   push:
-    branches: main
+    branches: [main, master, lab4]
   pull_request:
     branches: '*'
+  workflow_dispatch:
 
 jobs:
   build:
+    name: Build & Unit Test
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Base Setup
       uses: jupyterlab/maintainer-tools/.github/actions/base-setup@v1
 
     - name: Install dependencies
-      run: python -m pip install -U "jupyterlab>=4.0.0,<5"
+      run: |
+        python -m pip install -U "jupyterlab>=4.0.0,<5" pytest jsonschema build
 
-    - name: Lint the extension
+    - name: Frontend lint and unit tests
       run: |
         set -eux
         jlpm
         jlpm run lint:check
+        jlpm run test
 
-    - name: Build the extension
+    - name: Install and verify extension
       run: |
         set -eux
-        python -m pip install .[test]
-
+        python -m pip install .
         jupyter labextension list
         jupyter labextension list 2>&1 | grep -ie "additional-resources-menu.*OK"
         python -m jupyterlab.browser_check
 
+    - name: Python unit tests
+      run: pytest
+
     - name: Package the extension
       run: |
         set -eux
-
-        pip install build
         python -m build
         pip uninstall -y "additional_resources_menu" jupyterlab
 
     - name: Upload extension packages
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: extension-artifacts
         path: dist/additional_resources_menu*
         if-no-files-found: error
 
   test_isolated:
+    name: Test Isolated Wheel Install
     needs: build
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
     - name: Install Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
-        python-version: '3.9'
+        python-version: '3.11'
         architecture: 'x64'
-    - uses: actions/download-artifact@v3
+    - uses: actions/download-artifact@v4
       with:
         name: extension-artifacts
     - name: Install and Test
@@ -74,17 +79,54 @@ jobs:
 
         pip install "jupyterlab>=4.0.0,<5" additional_resources_menu*.whl
 
-
         jupyter labextension list
         jupyter labextension list 2>&1 | grep -ie "additional-resources-menu.*OK"
         python -m jupyterlab.browser_check --no-browser-test
 
+  test_ui:
+    name: Galata E2E UI Tests
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Base Setup
+      uses: jupyterlab/maintainer-tools/.github/actions/base-setup@v1
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install JupyterLab and Extension
+      run: |
+        python -m pip install "jupyterlab>=4.0.0,<5"
+        jlpm
+        python -m pip install .
+
+    - name: Install Playwright Browsers
+      run: npx playwright install --with-deps chromium
+
+    - name: Run Galata UI tests
+      run: jlpm run test:ui
+
+    - name: Upload Playwright Report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: playwright-report-${{ matrix.python-version }}
+        path: playwright-report/
+        retention-days: 7
 
   check_links:
     name: Check Links
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: jupyterlab/maintainer-tools/.github/actions/base-setup@v1
       - uses: jupyterlab/maintainer-tools/.github/actions/check-links@v1

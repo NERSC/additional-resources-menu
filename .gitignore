@@ -119,3 +119,17 @@ dmypy.json
 
 # Yarn cache
 .yarn/
+
+# IDE
+.idea/
+
+# Test reports
+junit.xml
+playwright-report/
+test-results/
+
+# Assistant skills
+skills/
+
+
+

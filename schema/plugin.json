@@ -27,15 +27,22 @@
       "description": "What links to display in the help menu\nFormat: { name: string, url: string }\nExample: { name: \"Google\", url: \"https://google.com\" }\n",
       "items": {
         "type": "object",
+        "title": "Resource Link",
         "properties": {
           "name": {
-            "type": "string"
+            "type": "string",
+            "title": "Link Name",
+            "description": "The display name for the resource in the menu"
           },
           "url": {
-            "type": "string"
+            "type": "string",
+            "title": "Link URL",
+            "description": "The destination web address (must be a valid URI)",
+            "format": "uri"
           }
         },
-        "required": ["name", "url"]
+        "required": ["name", "url"],
+        "additionalProperties": false
       },
       "default": []
     }

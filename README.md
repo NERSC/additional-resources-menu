@@ -70,10 +70,34 @@ jupyter lab
 
 With the watch command running, every saved change will immediately be built locally and available in your running JupyterLab. Refresh JupyterLab to load the change in your browser (you may need to wait several seconds for the extension to be rebuilt).
 
-By default, the `jlpm run build` command generates the source maps for this extension to make it easier to debug using the browser dev tools. To also generate source maps for the JupyterLab core extensions, you can run the following command:
+### Running tests
+
+#### Frontend Unit Tests
+
+Run Jest tests for URL validation, mixed content checks, and widget instantiation:
 
 ```bash
-jupyter lab build --minimize=False
+jlpm run test
+```
+
+#### Python Unit Tests
+
+Run pytest unit tests for package metadata and schema validation:
+
+```bash
+pytest
+```
+
+#### Galata / Playwright UI Tests
+
+Run end-to-end browser tests using JupyterLab Galata and Playwright:
+
+```bash
+# Install browsers (first time only)
+npx playwright install --with-deps chromium
+
+# Run UI tests
+jlpm run test:ui
 ```
 
 ### Development uninstall

@@ -17,8 +17,9 @@
     "rootDir": "src",
     "strict": true,
     "strictNullChecks": true,
-    "target": "ES2018",
-    "types": []
+    "skipLibCheck": true,
+    "target": "ES2022",
+    "lib": ["DOM", "DOM.Iterable", "ES2022"]
   },
   "include": ["src/*"]
 }

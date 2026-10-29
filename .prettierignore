@@ -4,3 +4,9 @@ node_modules
 **/package.json
 !/package.json
 additional_resources_menu
+.pytest_cache
+.idea
+build
+dist
+skills
+*.egg-info
