@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "allowJs": true,
+    "module": "commonjs",
+    "outDir": "build/test",
+    "composite": false,
+    "incremental": false
+  },
+  "include": ["src/**/*", "jest.setup.js", "__mocks__/**/*"]
+}
