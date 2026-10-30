@@ -1,7 +1,14 @@
 import { test, expect } from '@jupyterlab/galata';
 
 test.use({
-  autoGoto: false
+  autoGoto: false,
+  waitForApplication: async ({ baseURL }, use) => {
+    const waitIsReady = async (page: any) => {
+      await page.locator('#jupyterlab-splash').waitFor({ state: 'detached' });
+      await page.waitForSelector('#jp-main-dock-panel');
+    };
+    await use(waitIsReady);
+  }
 });
 
 test.describe('Additional Resources Menu Extension', () => {
