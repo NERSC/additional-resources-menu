@@ -10,3 +10,7 @@ build
 dist
 skills
 *.egg-info
+**/test-results
+**/playwright-report
+ui-tests/node_modules
+

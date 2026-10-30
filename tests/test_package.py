@@ -9,7 +9,9 @@ ROOT = HERE.parent
 
 def test_version():
     from additional_resources_menu import __version__
-    assert __version__ == '2.0.0'
+    with (ROOT / "package.json").open() as f:
+        pkg = json.load(f)
+    assert __version__ == pkg["version"]
 
 
 def test_labextension_paths():
