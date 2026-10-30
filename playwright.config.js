@@ -9,7 +9,8 @@ module.exports = {
     baseURL: 'http://localhost:8888'
   },
   webServer: {
-    command: 'jupyter lab --port=8888 --no-browser --ServerApp.token=""',
+    command:
+      'jupyter lab --port=8888 --no-browser --ServerApp.token="" --expose-app-in-browser',
     url: 'http://localhost:8888/lab',
     timeout: 120 * 1000,
     reuseExistingServer: !process.env.CI
