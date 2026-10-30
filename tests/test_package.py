@@ -38,6 +38,7 @@ def test_schema_validity():
     assert "open-in-jupyter" in schema["properties"]
     assert "rank" in schema["properties"]
     assert schema["properties"]["links"]["items"]["properties"]["url"]["format"] == "uri"
+    assert schema.get("jupyter.lab.setting-deprecated") is True
 
 
 def test_example_overrides():
