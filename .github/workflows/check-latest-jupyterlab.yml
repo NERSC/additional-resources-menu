@@ -1,0 +1,123 @@
+name: Check Latest JupyterLab Release
+
+on:
+  schedule:
+    # Run every Monday at 05:00 UTC
+    - cron: '0 5 * * 1'
+  workflow_dispatch:
+
+jobs:
+  test_latest_jupyterlab:
+    name: Test Against Latest Stable JupyterLab
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Base Setup
+      uses: jupyterlab/maintainer-tools/.github/actions/base-setup@v1
+      with:
+        python_version: '3.11'
+
+    - name: Install Latest Stable JupyterLab
+      run: |
+        python -m pip install --upgrade pip
+        # Install the latest stable release of jupyterlab on PyPI
+        python -m pip install --upgrade jupyterlab pytest jsonschema build
+        python -c "import jupyterlab; print('Testing against JupyterLab version:', jupyterlab.__version__)"
+
+    - name: Frontend Lint and Unit Tests
+      run: |
+        set -eux
+        jlpm
+        jlpm run lint:check
+        jlpm run test
+
+    - name: Build and Verify Extension Install
+      run: |
+        set -eux
+        python -m pip install .
+        jupyter labextension list
+        jupyter labextension list 2>&1 | grep -ie "additional-resources-menu.*OK"
+        python -m jupyterlab.browser_check
+
+    - name: Python Unit Tests
+      run: pytest
+
+    - name: Build Wheel Artifact
+      run: |
+        set -eux
+        python -m build
+        pip uninstall -y "additional_resources_menu"
+
+    - name: Test Isolated Wheel Install (No Node.js)
+      run: |
+        set -eux
+        # Remove NodeJS to verify clean standalone installation without Node.js
+        sudo rm -rf $(which node)
+        sudo rm -rf $(which node)
+
+        pip install dist/additional_resources_menu*.whl
+        jupyter labextension list
+        jupyter labextension list 2>&1 | grep -ie "additional-resources-menu.*OK"
+        python -m jupyterlab.browser_check --no-browser-test
+
+  test_latest_ui:
+    name: Galata E2E Tests on Latest JupyterLab
+    needs: test_latest_jupyterlab
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    env:
+      PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/pw-browsers
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Base Setup
+      uses: jupyterlab/maintainer-tools/.github/actions/base-setup@v1
+      with:
+        python_version: '3.11'
+
+    - name: Install Latest Stable JupyterLab and Extension
+      run: |
+        set -eux
+        python -m pip install --upgrade pip
+        python -m pip install --upgrade jupyterlab "tornado<6.5.9"
+        python -c "import jupyterlab; print('Testing UI on JupyterLab version:', jupyterlab.__version__)"
+        python -m pip install .
+
+    - name: Install UI test dependencies
+      working-directory: ui-tests
+      env:
+        YARN_ENABLE_IMMUTABLE_INSTALLS: 0
+        PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+      run: jlpm install
+
+    - name: Set up browser cache
+      uses: actions/cache@v4
+      with:
+        path: |
+          ${{ github.workspace }}/pw-browsers
+        key: ${{ runner.os }}-${{ hashFiles('ui-tests/yarn.lock') }}
+
+    - name: Install browser
+      run: jlpm playwright install chromium
+      working-directory: ui-tests
+
+    - name: Execute Galata integration tests
+      working-directory: ui-tests
+      run: |
+        jlpm playwright test
+
+    - name: Upload Playwright Test report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: latest-jupyterlab-playwright-report
+        path: |
+          ui-tests/test-results
+          ui-tests/playwright-report

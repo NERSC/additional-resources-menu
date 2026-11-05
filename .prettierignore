@@ -2,4 +2,15 @@ node_modules
 **/node_modules
 **/lib
 **/package.json
+!/package.json
 additional_resources_menu
+.pytest_cache
+.idea
+build
+dist
+skills
+*.egg-info
+**/test-results
+**/playwright-report
+ui-tests/node_modules
+
